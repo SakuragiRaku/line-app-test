@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="description" content="スターアカデミー 予約フォーム - LINEミニアプリ" />
+    <title>スターアカデミー 予約</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --green: #06C755;
+            --green-dark: #05A648;
+            --green-light: #E8FAF0;
+            --navy: #1A2E4A;
+            --bg: #F4F6F9;
+            --card: #FFFFFF;
+            --text: #1A1A2E;
+            --muted: #7A8499;
+            --border: #E2E8F0;
+            --error: #E53E3E;
+            --error-bg: #FFF5F5;
+            --radius: 16px;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: 'Noto Sans JP', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ====== ヘッダー ====== */
+        header {
+            background: linear-gradient(135deg, #1A2E4A 0%, #0F4C75 50%, #06C755 100%);
+            padding: 24px 16px 24px;
+            /* ← 下のpadding を減らして重なりを防止 */
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: rgba(6, 199, 85, 0.12);
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: -30px;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .logo-wrap {
+            position: relative;
+            z-index: 1;
+            margin-bottom: 10px;
+        }
+
+        .logo-img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            border-radius: 18px;
+            background: #fff;
+            padding: 6px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 0.05em;
+            position: relative;
+            z-index: 1;
+        }
+
+        header p {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.75);
+            margin-top: 4px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ====== メインコンテナ ====== */
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            /* ← 負のマージンを廃止、重なりを解消 */
+            padding: 16px 12px 80px;
+            /* ← 上に適切な余白 */
+        }
+
+        /* ====== タブ ====== */
+        .tab-bar {
+            display: flex;
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 4px;
+            box-shadow: var(--shadow);
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--navy) 0%, #0F4C75 100%);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(26, 46, 74, 0.35);
+        }
+
+        .tab-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* ====== カード ====== */
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 20px 16px;
+            box-shadow: var(--shadow);
+            margin-bottom: 12px;
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text);
+        }
+
+        .card-title svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--green);
+        }
+
+        /* ====== フォーム ====== */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        label span.required {
+            color: var(--error);
+            margin-left: 4px;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 15px;
+            color: var(--text);
+            background: #fff;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            border-color: var(--green);
+            box-shadow: 0 0 0 3px rgba(6, 199, 85, 0.15);
+        }
+
+        input.error,
+        select.error,
+        textarea.error {
+            border-color: var(--error);
+            background: var(--error-bg);
+        }
+
+        textarea {
+            resize: none;
+            height: 90px;
+        }
+
+        .error-msg {
+            display: none;
+            font-size: 12px;
+            color: var(--error);
+            margin-top: 4px;
+        }
+
+        .error-msg.show {
+            display: block;
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .row .form-group {
+            flex: 1;
+        }
+
+        /* ====== 送信ボタン ====== */
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--navy) 0%, #1565C0 100%);
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(26, 46, 74, 0.4);
+            transition: transform 0.15s, box-shadow 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            letter-spacing: 0.03em;
+        }
+
+        .submit-btn:active {
+            transform: scale(0.97);
+            box-shadow: 0 2px 8px rgba(26, 46, 74, 0.3);
+        }
+
+        .submit-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: #fff;
+        }
+
+        /* ====== トースト ====== */
+        .toast {
+            position: fixed;
+            top: -80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--navy), #0F4C75);
+            color: #fff;
+            padding: 14px 24px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 6px 20px rgba(26, 46, 74, 0.4);
+            transition: top 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 9999;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toast.show {
+            top: 24px;
+        }
+
+        .toast svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--green);
+        }
+
+        /* ====== 一覧 ====== */
+        .list-view {
+            display: none;
+        }
+
+        .list-view.active {
+            display: block;
+        }
+
+        .form-view.hidden {
+            display: none;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--muted);
+        }
+
+        .no-data svg {
+            width: 56px;
+            height: 56px;
+            fill: var(--border);
+            display: block;
+            margin: 0 auto 12px;
+        }
+
+        .no-data p {
+            font-size: 14px;
+        }
+
+        .reservation-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 16px;
+            box-shadow: var(--shadow);
+            margin-bottom: 10px;
+            border-left: 4px solid var(--navy);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .res-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .res-detail {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        .res-detail svg {
+            width: 14px;
+            height: 14px;
+            fill: var(--navy);
+            flex-shrink: 0;
+        }
+
+        .res-memo {
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--text);
+            background: var(--green-light);
+            padding: 8px 10px;
+            border-radius: 8px;
+        }
+
+        .res-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .res-badge {
+            font-size: 11px;
+            font-weight: 700;
+            background: #EEF2FF;
+            color: var(--navy);
+            padding: 3px 8px;
+            border-radius: 20px;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            color: #ccc;
+            transition: color 0.2s;
+        }
+
+        .delete-btn:hover {
+            color: var(--error);
+        }
+
+        .delete-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .list-count {
+            font-size: 13px;
+            color: var(--muted);
+            text-align: right;
+            margin-bottom: 10px;
+        }
+
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ヘッダー -->
+    <header>
+        <div class="logo-wrap">
+            <img src="logo.png" alt="スターアカデミー ロゴ" class="logo-img" />
+        </div>
+        <h1>スターアカデミー</h1>
+        <p>授業・面談のご予約はこちら</p>
+    </header>
+
+    <!-- トースト通知 -->
+    <div class="toast" id="toast">
+        <svg viewBox="0 0 24 24">
+            <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+        </svg>
+        <span id="toast-msg">予約を受け付けました</span>
+    </div>
+
+    <div class="container">
+
+        <!-- タブ -->
+        <div class="tab-bar">
+            <button class="tab-btn active" id="tab-form" onclick="switchTab('form')">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+                </svg>
+                予約フォーム
+            </button>
+            <button class="tab-btn" id="tab-list" onclick="switchTab('list')">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" />
+                </svg>
+                予約一覧
+                <span id="badge"
+                    style="background:var(--green);color:#fff;border-radius:20px;padding:1px 7px;font-size:12px;font-weight:700;display:none">0</span>
+            </button>
+        </div>
+
+        <!-- ===== フォームビュー ===== -->
+        <div class="form-view" id="form-view">
+            <div class="card">
+                <div class="card-title">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                    </svg>
+                    お客様情報
+                </div>
+
+                <form id="reservation-form" novalidate>
+                    <div class="form-group">
+                        <label for="name">お名前<span class="required">*</span></label>
+                        <input type="text" id="name" placeholder="例：山田 太郎" autocomplete="name" inputmode="text" />
+                        <div class="error-msg" id="name-error">お名前を入力してください</div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group">
+                            <label for="date">日付<span class="required">*</span></label>
+                            <input type="date" id="date" />
+                            <div class="error-msg" id="date-error">日付を選択してください</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="time">時間<span class="required">*</span></label>
+                            <!-- step="600" = 10分刻み（600秒） -->
+                            <input type="time" id="time" step="600" />
+                            <div class="error-msg" id="time-error">時間を選択してください</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="memo">メモ・ご要望</label>
+                        <textarea id="memo" placeholder="授業科目・ご相談内容などをご記入ください（任意）"></textarea>
+                    </div>
+
+                    <button type="submit" class="submit-btn">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+                        </svg>
+                        予約する
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ===== 一覧ビュー ===== -->
+        <div class="list-view" id="list-view">
+            <div id="list-count" class="list-count"></div>
+            <div id="reservation-list"></div>
+        </div>
+
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'star_academy_reservations';
+        let reservations = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+
+        (function init() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date').min = today;
+            document.getElementById('date').value = today;
+            updateBadge();
+        })();
+
+        function switchTab(tab) {
+            const isForm = tab === 'form';
+            document.getElementById('form-view').classList.toggle('hidden', !isForm);
+            document.getElementById('list-view').classList.toggle('active', !isForm);
+            document.getElementById('tab-form').classList.toggle('active', isForm);
+            document.getElementById('tab-list').classList.toggle('active', !isForm);
+            if (!isForm) renderList();
+        }
+
+        function validate() {
+            let valid = true;
+            const fields = [
+                { id: 'name', errId: 'name-error', check: v => v.trim().length > 0 },
+                { id: 'date', errId: 'date-error', check: v => v !== '' },
+                { id: 'time', errId: 'time-error', check: v => v !== '' },
+            ];
+            fields.forEach(({ id, errId, check }) => {
+                const el = document.getElementById(id);
+                const err = document.getElementById(errId);
+                const ok = check(el.value);
+                el.classList.toggle('error', !ok);
+                err.classList.toggle('show', !ok);
+                if (!ok) valid = false;
+            });
+            return valid;
+        }
+
+        ['name', 'date', 'time'].forEach(id => {
+            document.getElementById(id).addEventListener('input', function () {
+                this.classList.remove('error');
+                document.getElementById(id + '-error').classList.remove('show');
+            });
+        });
+
+        document.getElementById('reservation-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (!validate()) return;
+            const res = {
+                id: Date.now(),
+                name: document.getElementById('name').value.trim(),
+                date: document.getElementById('date').value,
+                time: document.getElementById('time').value,
+                memo: document.getElementById('memo').value.trim(),
+            };
+            reservations.unshift(res);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(reservations));
+            this.reset();
+            document.getElementById('date').value = new Date().toISOString().split('T')[0];
+            updateBadge();
+            showToast('✅ ご予約を受け付けました！');
+        });
+
+        function renderList() {
+            const listEl = document.getElementById('reservation-list');
+            const countEl = document.getElementById('list-count');
+            if (reservations.length === 0) {
+                countEl.textContent = '';
+                listEl.innerHTML = `
+        <div class="no-data">
+          <svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19a2 2 0 002 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
+          <p>まだ予約がありません</p>
+        </div>`;
+                return;
+            }
+            countEl.textContent = `全 ${reservations.length} 件の予約`;
+            listEl.innerHTML = reservations.map(r => {
+                const dateObj = new Date(r.date + 'T00:00:00');
+                const dow = ['日', '月', '火', '水', '木', '金', '土'][dateObj.getDay()];
+                const dateStr = `${r.date.replace(/-/g, '/')}（${dow}）`;
+                return `
+        <div class="reservation-card" id="res-${r.id}">
+          <div class="res-head">
+            <div class="res-name">${escHtml(r.name)} 様</div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span class="res-badge">予約済</span>
+              <button class="delete-btn" onclick="deleteRes(${r.id})" title="削除">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="res-detail">
+            <svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19a2 2 0 002 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
+            ${dateStr}
+          </div>
+          <div class="res-detail">
+            <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
+            ${r.time}
+          </div>
+          ${r.memo ? `<div class="res-memo">📝 ${escHtml(r.memo)}</div>` : ''}
+        </div>`;
+            }).join('');
+        }
+
+        function deleteRes(id) {
+            if (!confirm('この予約を削除しますか？')) return;
+            reservations = reservations.filter(r => r.id !== id);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(reservations));
+            updateBadge();
+            renderList();
+        }
+
+        function updateBadge() {
+            const badge = document.getElementById('badge');
+            if (reservations.length > 0) {
+                badge.textContent = reservations.length;
+                badge.style.display = 'inline';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function escHtml(str) {
+            return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+        }
+    </script>
+</body>
+
+</html>
