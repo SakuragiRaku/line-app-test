@@ -548,6 +548,9 @@
         const STORAGE_KEY = 'star_academy_reservations';
         let reservations = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 
+        // ===== GAS Web App URL =====
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbwEM--4K0yN5A5DziDADDU5BdjOdqtBe4YiL6GZQQB8Fxr--RJe4qi3E7TA63f0vwRalQ/exec';
+
         (function init() {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('date').min = today;
@@ -589,9 +592,10 @@
             });
         });
 
-        document.getElementById('reservation-form').addEventListener('submit', function (e) {
+        document.getElementById('reservation-form').addEventListener('submit', async function (e) {
             e.preventDefault();
             if (!validate()) return;
+
             const res = {
                 id: Date.now(),
                 name: document.getElementById('name').value.trim(),
@@ -599,12 +603,39 @@
                 time: document.getElementById('time').value,
                 memo: document.getElementById('memo').value.trim(),
             };
-            reservations.unshift(res);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(reservations));
-            this.reset();
-            document.getElementById('date').value = new Date().toISOString().split('T')[0];
-            updateBadge();
-            showToast('✅ ご予約を受け付けました！');
+
+            // ボタンを送信中状態にする
+            const btn = document.querySelector('.submit-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<svg viewBox="0 0 24 24" style="animation:spin 1s linear infinite"><path d="M12 4V2A10 10 0 002 12h2a8 8 0 018-8z"/></svg> 送信中…';
+
+            try {
+                // GAS へ送信（no-corsのためレスポンス内容は取得不可だが送信は成功）
+                await fetch(GAS_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(res),
+                });
+                // ローカルにも保存
+                reservations.unshift(res);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(reservations));
+                this.reset();
+                document.getElementById('date').value = new Date().toISOString().split('T')[0];
+                updateBadge();
+                showToast('✅ Googleカレンダーに予約を登録しました！');
+            } catch (err) {
+                // ネットワークエラー時はローカルのみ保存
+                reservations.unshift(res);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(reservations));
+                this.reset();
+                document.getElementById('date').value = new Date().toISOString().split('T')[0];
+                updateBadge();
+                showToast('⚠️ 予約を保存しました（オフライン）');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg> 予約する';
+            }
         });
 
         function renderList() {
