@@ -515,8 +515,9 @@
                         </div>
                         <div class="form-group">
                             <label for="time">時間<span class="required">*</span></label>
-                            <!-- step="600" = 10分刻み（600秒） -->
-                            <input type="time" id="time" step="600" />
+                            <select id="time" disabled>
+                                <option value="">日付を選択してください</option>
+                            </select>
                             <div class="error-msg" id="time-error">時間を選択してください</div>
                         </div>
                     </div>
@@ -553,10 +554,48 @@
 
         (function init() {
             const today = new Date().toISOString().split('T')[0];
-            document.getElementById('date').min = today;
-            document.getElementById('date').value = today;
+            const dateInput = document.getElementById('date');
+            dateInput.min = today;
+            dateInput.value = today;
+
+            dateInput.addEventListener('change', fetchAvailableSlots);
             updateBadge();
+
+            // 初回読み込み時の日付で空き枠を取得
+            fetchAvailableSlots();
         })();
+
+        async function fetchAvailableSlots() {
+            const dateVal = document.getElementById('date').value;
+            const timeSelect = document.getElementById('time');
+
+            if (!dateVal) {
+                timeSelect.innerHTML = '<option value="">日付を選択してください</option>';
+                timeSelect.disabled = true;
+                return;
+            }
+
+            timeSelect.innerHTML = '<option value="">空き枠を取得中...</option>';
+            timeSelect.disabled = true;
+
+            try {
+                // GASにGETリクエストを送信して指定日の空き枠リストを取得（キャッシュ回避のためパラメータ付与）
+                const url = GAS_URL + "?date=" + encodeURIComponent(dateVal) + "&t=" + Date.now();
+                const resp = await fetch(url);
+                const slots = await resp.json();
+
+                if (slots.length === 0) {
+                    timeSelect.innerHTML = '<option value="">空き枠がありません</option>';
+                } else {
+                    timeSelect.innerHTML = '<option value="">時間を選択してください</option>' +
+                        slots.map(s => `<option value="${s}">${s}</option>`).join('');
+                    timeSelect.disabled = false;
+                }
+            } catch (err) {
+                console.error(err);
+                timeSelect.innerHTML = '<option value="">取得エラー（再試行してください）</option>';
+            }
+        }
 
         function switchTab(tab) {
             const isForm = tab === 'form';
